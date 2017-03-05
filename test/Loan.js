@@ -7,12 +7,9 @@ contract('Loan', (accounts)=>{
   const principal=500;
   it("should create loan", ()=>{
     return Loan.deployed().then((instance)=> {
-      
       return instance.createLoan.sendTransaction(payPerYear, totalPay, annualRate, principal, {value:3000000, gas:3000000}).then(()=> {
         return instance.getNumLoanForBorrower(accounts[0]).then((result)=>{
-          console.log(result);
           assert.equal(result.c[0],1, "Loan not created");
-          //done();
         })
       });
         
@@ -22,9 +19,7 @@ contract('Loan', (accounts)=>{
     return Loan.deployed().then((instance)=> {
       return instance.createLoan.sendTransaction(payPerYear, totalPay, annualRate, principal, {value:3000000, gas:3000000}).then(()=> {
         return instance.getNumLoanForBorrower(accounts[0]).then((result)=>{
-          console.log(result);
           assert.equal(result.c[0],2, "two loans not created");
-          //done();
         })
       });
         
@@ -33,9 +28,7 @@ contract('Loan', (accounts)=>{
   it("should have 50 reputation", ()=>{
     return Loan.deployed().then((instance)=> {
         return instance.getReputation(accounts[0]).then((result)=>{
-          console.log(result);
           assert.equal(result.c[0], 50, "Repuation not equal to 50");
-          //done();
         })
     });
   });
@@ -52,7 +45,6 @@ contract('Loan', (accounts)=>{
       loanNumber=loanNums.c[0];
       return loan.computeNumberMissedPayments(accounts[0], loanNumber);
     }).then((result)=>{
-      console.log(result);
       assert.equal(result.c[0], 0, "missedPayments not functioning")
     })
   });
@@ -66,7 +58,6 @@ contract('Loan', (accounts)=>{
     return Loan.deployed().then((instance)=> {
       return instance.getPeriodicRate(annualRate, payPerYear);
     }).then((result)=>{
-      console.log(result);
       assert.equal(result.c[0], 3, "periodic rate does not equal 3");
     });
   });
@@ -96,7 +87,6 @@ contract('Loan', (accounts)=>{
     }).then((pmt)=>{
       return loan.balance(annualRate, payPerYear, 1, principal, pmt.c[0]);
     }).then((balance)=>{
-      console.log(balance);
       assert.equal(balance.c[0], 479500, "balance does not equal 479500");
     });
   });
@@ -108,7 +98,6 @@ contract('Loan', (accounts)=>{
     }).then((pmt)=>{
       return loan.balance(annualRate, payPerYear, 0, principal, pmt.c[0]);
     }).then((balance)=>{
-      console.log(balance);
       assert.equal(balance.c[0], 500000, "balance does not equal 500000");
     });
   });
@@ -120,7 +109,6 @@ contract('Loan', (accounts)=>{
     }).then((pmt)=>{
       return loan.balance(annualRate, payPerYear, 12, principal, pmt.c[0]);
     }).then((balance)=>{
-      console.log(balance);
       assert.equal(balance.c[0], 254000, "balance does not equal 254000");
     });
   });
@@ -132,7 +120,6 @@ contract('Loan', (accounts)=>{
     }).then((pmt)=>{
       return loan.balance(annualRate, payPerYear, totalPay-1, principal, pmt.c[0]);
     }).then((balance)=>{
-      console.log(balance);
       assert.equal(balance.c[0], 14834, "balance does not equal 14834");
     });
   });
@@ -150,10 +137,8 @@ contract('Loan', (accounts)=>{
       loan=instance;
       return instance.iterateNextPayDate(block.timestamp,payPerYear);
     }).then((nextPayDate)=>{
-      console.log(nextPayDate);
       return loan.checkTimeToPay(nextPayDate.c[0]);
     }).then((isTimeToPay)=>{
-      console.log(isTimeToPay);
       assert.equal(isTimeToPay, false, "nextDate isn't working");
     })    
   });
@@ -161,7 +146,6 @@ contract('Loan', (accounts)=>{
     return Loan.deployed().then((instance)=> {
       return instance.reputationHit(12, 50);
     }).then((result)=>{
-      console.log(result);
       assert.equal(result.c[0], 15, "reputation not functioning")
     })
   });
@@ -169,7 +153,6 @@ contract('Loan', (accounts)=>{
     return Loan.deployed().then((instance)=> {
       return instance.reputationHit(24, 50);
     }).then((result)=>{
-      console.log(result);
       assert.equal(result.c[0], 5, "reputation not functioning")
     })
   });
@@ -185,15 +168,12 @@ contract('Loan', (accounts)=>{
       loan=instance;
       return instance.createFakeLoan.sendTransaction(payPerYear, totalPay, annualRate, principal, {value:3000000, gas:3000000});
     }).then((transaction)=> {
-      console.log(transaction);
       return loan.getNumLoanForBorrower(accounts[0]);
     }).then((numLoans)=>{
       return loan.getBorrowerLoanNumber(accounts[0], numLoans.c[0]-1);
     }).then((loanNumber)=>{
-      console.log(loanNumber);
       return loan.computeAmountNeededToPay(accounts[0], loanNumber.c[0]);
     }).then((amountsToPay)=>{
-      console.log(amountsToPay);
       assert.equal(amountsToPay[0].c[0], totalPay, "total payments does not equal 24");
       assert.equal(amountsToPay[1].c[0], (totalPay-1)*22000+14834, "total amount paid does not equal 520834");
       assert.equal(amountsToPay[2].c[0], 64800000, "total time does not equal 64800000");
@@ -254,18 +234,13 @@ contract('Loan', (accounts)=>{
               console.log("Finished the check for all loans for borrower ", borrower);
               return loan.getReputation(borrower);
             }).then((reputation)=>{
-              console.log(reputation);
               assert.equal(reputation.c[0], 5, "reputation not assigned correctly");
-              return 0;
             });
           });
         })
       ).then((results)=>{
-        console.log(results);
-        return 0;
       });
     }).then((results)=>{
-      console.log(results);
     })
   });
 });
