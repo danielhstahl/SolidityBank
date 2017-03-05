@@ -43,14 +43,14 @@ contract('Loan', (accounts)=>{
         })
     });
   });
-  it("periodic rate should equal 33", ()=>{
+  it("periodic rate should equal 3", ()=>{
     return Loan.deployed().then((instance)=> {
       const payPerYear=12;
       const annualRate=40;//4%
       //instance.pmt(annualRate, payPerYear, totalPay, principal).then((result)=>{
       return instance.getPeriodicRate(annualRate, payPerYear).then((result)=>{
         console.log(result);
-        assert.equal(result.c[0], 3, "periodic rate does not equal 33");
+        assert.equal(result.c[0], 3, "periodic rate does not equal 3");
         //done();
       });
       
@@ -168,6 +168,96 @@ contract('Loan', (accounts)=>{
           })
         })
       });
+    });
+  });
+  it("should compute reputation hit for 12", ()=>{
+    //web3.eth.defaultAccount=accounts[1];
+    return Loan.deployed().then((instance)=> {
+      const totalPay=24;//two year loan
+      return instance.reputationHit(12, 50).then((result)=>{
+        console.log(result);
+        assert.equal(result.c[0], 15, "reputation not functioning")
+      })
+    });
+  });
+  it("should compute reputation hit for 24", ()=>{
+    //web3.eth.defaultAccount=accounts[1];
+    return Loan.deployed().then((instance)=> {
+      const totalPay=24;//two year loan
+      return instance.reputationHit(24, 50).then((result)=>{
+        console.log(result);
+        assert.equal(result.c[0], 5, "reputation not functioning")
+      })
+    });
+  });
+  it("should compute number of missed payments", ()=>{
+    //web3.eth.defaultAccount=accounts[1];
+    return Loan.deployed().then((instance)=> {
+      const totalPay=24;//two year loan
+      return instance.computeNumberMissedPayments(accounts[0], 3).then((result)=>{
+        assert.equal(result.c[0], totalPay, "missedPayments not functioning")
+      })
+    });
+  });
+ /* it("should not truncate greater than zero", ()=>{
+    const totalPay=24;//two year loan
+    return Loan.deployed().then((instance)=> {
+      return instance.computeNumberMissedPayments(accounts[0], 3).then((numMissingPayments)=>{
+        console.log(numMissingPayments);
+        return instance.getReputation(accounts[0]).then((reputation)=>{
+          console.log(reputation);
+          return instance.truncateZero(reputation.c[0]-numMissingPayments.c[0]).then((result)=>{
+            console.log(result);
+            assert.equal(result.c[0], reputation.c[0]-numMissingPayments.c[0], "missedPayments not functioning")
+          })
+        });
+      });
+    });
+  });*/
+  it("should penalize", ()=>{
+    return Loan.deployed().then((instance)=> {
+      const payPerYear=12;
+      const totalPay=24;//two year loan
+      const annualRate=40;//4%
+      const principal=500;
+      /**Beginning of worst code ever! */
+      return instance.numberOfBorrowers().then((result)=>{
+        console.log("Total number of borrowers: ", result);
+        return Promise.all(
+          Array.apply(null, Array(result.c[0])).map((val, index)=>{
+            console.log("Working on borrower number ", index);
+            return instance.getBorrowerAtIndex(index).then((borrower)=>{
+              console.log("Borrower found!  Address is ", borrower);
+              return instance.getNumLoanForBorrower(borrower).then((numLoans)=>{
+                console.log("The borrower has ", numLoans.c[0], " loans!");
+                return Promise.all(
+                  Array.apply(null, Array(numLoans.c[0])).map((val, loanIndex)=>{
+                    console.log("Working on loan index ", loanIndex);
+                    return instance.getBorrowerLoanNumber(borrower, loanIndex).then((loanNumber)=>{
+                      console.log("Working on loan number ", loanNumber.c[0]);
+                      return instance.penalizeBorrower.sendTransaction(borrower, loanNumber.c[0], {value:3000000, gas:3000000}).then(()=>{
+                        console.log("Just ran a penalize check for ", borrower, " at loan number ", loanNumber.c[0]);
+                        return 0;
+                      });
+                    });
+                  })
+                ).then(()=>{
+                  console.log("Finished the check for all loans for borrower ", borrower);
+                  return instance.getReputation(borrower).then((reputation)=>{
+                    console.log(reputation);
+                    return instance.defaultRep().then((defaultRep)=>{
+                      console.log(defaultRep);
+                      assert.equal(reputation.c[0], 5, "reputation not assigned correctly");
+                    });
+                  });
+                });
+              });
+            });
+          })
+        ).then(()=>{
+            return 0;
+        });
+      })
     });
   });
 });

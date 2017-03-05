@@ -4,9 +4,11 @@ pragma solidity ^0.4.4;
 contract Loan {
 	uint constant precision=1000;//eg, .04 is actually 40
 	uint constant daysInYear=360;
+	uint constant lambda=1100;//1.1, the rate at which to decline reputation
+	modifier onlyOwner { if (msg.sender == owner) _; } //ensure only owner does some things
 	uint public constant maxNumberOfPayments=24;//due to machine precision issues...
 	uint loanNumber=1;
-	uint constant defaultRep=50;
+	uint public constant defaultRep=50;
 	address public owner;
 	function Loan(){
 		owner=msg.sender;
@@ -30,6 +32,7 @@ contract Loan {
 		mapping (uint => LoanType) loans;
 	}
 	mapping (address => Borrower) private borrowers;
+	address[] private borrowerAddresses;
 	function getNumLoanForBorrower(address borrower) public constant returns(uint){
 		return borrowers[borrower].loanNumbers.length;
 	}
@@ -77,19 +80,41 @@ contract Loan {
 			throw;
 		}
 	}
+	function numberOfBorrowers() public constant returns(uint){
+		return borrowerAddresses.length;
+	}
+	function getBorrowerAtIndex(uint index) public constant returns(address){
+		if(index>=borrowerAddresses.length){
+			throw;
+		}
+		return borrowerAddresses[index];
+	}
+	function reputationHit(uint numberOfMissedPayments, uint reputation) public constant returns(uint){
+		return ((precision**numberOfMissedPayments)*reputation)/(lambda**numberOfMissedPayments);
+	}
+	function computeNumberMissedPayments(address borrower, uint loanNumber) public constant returns(uint){
+		var (paymentsMade, payAmount, payDate)=computeAmountNeededToPay(borrower, loanNumber);
+		return paymentsMade-borrowers[borrower].loans[loanNumber].totalPaymentsMade;
+	}
+	function penalizeBorrower(address borrower, uint loanNumber) public payable onlyOwner{
+		uint numberOfMissedPayments=computeNumberMissedPayments(borrower, loanNumber);
+		if(numberOfMissedPayments>0){
+			borrowers[borrower].reputation=reputationHit(numberOfMissedPayments, borrowers[borrower].reputation);
+		}
+	}
 	function createLoan(uint paymentsPerYear, uint totalPayments, uint annualRate,uint principal) public payable{
 		createLoan(paymentsPerYear, totalPayments, annualRate, principal, now);
-		
 	}
 	function createLoan(uint paymentsPerYear, uint totalPayments, uint annualRate,uint principal, uint currDate)public payable{
 		checkSize(totalPayments);
 		if(borrowers[msg.sender].exists==false){ //doesn't exist
+			borrowerAddresses.push(msg.sender);
 			borrowers[msg.sender].exists=true;//Borrower(true, defaultRep);
 			borrowers[msg.sender].reputation=defaultRep;
-		}
-		loanNumber++;
+		}		
 		borrowers[msg.sender].loanNumbers.push(loanNumber);//++;
 		borrowers[msg.sender].loans[loanNumber]=LoanType(paymentsPerYear, totalPayments, 0, annualRate, currDate, calculateDaysTillNextPayDate(currDate, paymentsPerYear), principal, true);
+		loanNumber++;
 	}
 	function createFakeLoan(uint paymentsPerYear, uint totalPayments, uint annualRate,uint principal) public payable{
 		createLoan(paymentsPerYear, totalPayments, annualRate, principal, 0);
