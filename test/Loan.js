@@ -41,14 +41,16 @@ contract('Loan', (accounts)=>{
   });
   it("should compute zero missed payments", ()=>{
     let loan;
+    let loanNumber;
+    const block=web3.eth.getBlock("latest");//(result)=>{
     return Loan.deployed().then((instance)=> {
       loan=instance;
       return loan.getNumLoanForBorrower(accounts[0]);
     }).then((numLoans)=>{
       return loan.getBorrowerLoanNumber(accounts[0], numLoans.c[0]-1);
     }).then((loanNums)=>{
-      console.log(loanNums);
-      return loan.computeNumberMissedPayments(accounts[0], loanNums.c[0]);
+      loanNumber=loanNums.c[0];
+      return loan.computeNumberMissedPayments(accounts[0], loanNumber);
     }).then((result)=>{
       console.log(result);
       assert.equal(result.c[0], 0, "missedPayments not functioning")
@@ -136,10 +138,24 @@ contract('Loan', (accounts)=>{
   });
   it("should calculate days till next correctly", ()=>{
     return Loan.deployed().then((instance)=> {
-      return instance.calculateDaysTillNextPayDate(0,payPerYear);
+      return instance.calculateDaysTillNextPayDate(payPerYear);
     }).then((result)=>{
       assert.equal(result.c[0], 2592000, "nextDate does not equal 2592000");
     });
+  });
+  it("should iterate dates correctly", ()=>{
+    const block=web3.eth.getBlock("latest");//(result)=>{
+    let loan;
+    return Loan.deployed().then((instance)=> {
+      loan=instance;
+      return instance.iterateNextPayDate(block.timestamp,payPerYear);
+    }).then((nextPayDate)=>{
+      console.log(nextPayDate);
+      return loan.checkTimeToPay(nextPayDate.c[0]);
+    }).then((isTimeToPay)=>{
+      console.log(isTimeToPay);
+      assert.equal(isTimeToPay, false, "nextDate isn't working");
+    })    
   });
   it("should compute reputation hit for 12", ()=>{
     return Loan.deployed().then((instance)=> {

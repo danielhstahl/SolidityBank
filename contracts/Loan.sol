@@ -43,6 +43,12 @@ contract Loan {
 	function getBorrowerLoanNumber(address borrower, uint index) public constant returns(uint){
 		return borrowers[borrower].loanNumbers[index];
 	}
+	function getNextPayDate(address borrower, uint loanNumber) public constant returns(uint){
+		return borrowers[borrower].loans[loanNumber].payDate;
+	}
+	function getOriginationDate(address borrower, uint loanNumber) public constant returns(uint){
+		return borrowers[borrower].loans[loanNumber].originationDate;
+	}
 	function pwPrecision(uint r, uint numPayments) public constant returns(uint){
 		return ((precision+r)**numPayments)/(precision**(numPayments-1));
 	}
@@ -64,14 +70,14 @@ contract Loan {
 	function checkTimeToPay(uint payDate)  public constant returns(bool){
 		return block.timestamp>payDate;
 	}
-	function calculateDaysTillNextPayDate(uint currDate, uint paymentsPerYear) public constant returns(uint){
+	function calculateDaysTillNextPayDate(uint paymentsPerYear) public constant returns(uint){
 		var numHoursInDay=24;
 		var numMinutesInHour=60;
 		var numSecondsInMinute=60;
 		return (daysInYear/paymentsPerYear)*numHoursInDay*numMinutesInHour*numSecondsInMinute;
 	}
 	function iterateNextPayDate(uint currDate, uint paymentsPerYear) public constant returns(uint){
-		return currDate+calculateDaysTillNextPayDate(currDate, paymentsPerYear);
+		return currDate+calculateDaysTillNextPayDate( paymentsPerYear);
 	}
 	function hasFinishedLoan(uint totalPaymentsMade, uint totalPayments) public constant returns(bool){
 		return totalPaymentsMade>=totalPayments;
@@ -105,9 +111,9 @@ contract Loan {
 		}
 	}
 	function createLoan(uint paymentsPerYear, uint totalPayments, uint annualRate,uint principal) public payable{
-		createLoan(paymentsPerYear, totalPayments, annualRate, principal, now);
+		createLoan(paymentsPerYear, totalPayments, annualRate, principal, block.timestamp);
 	}
-	function createLoan(uint paymentsPerYear, uint totalPayments, uint annualRate,uint principal, uint currDate)public payable{
+	function createLoan(uint paymentsPerYear, uint totalPayments, uint annualRate,uint principal, uint currDate) public payable{
 		checkSize(totalPayments);
 		if(borrowers[msg.sender].exists==false){ //doesn't exist
 			borrowerAddresses.push(msg.sender);
@@ -115,7 +121,7 @@ contract Loan {
 			borrowers[msg.sender].reputation=defaultRep;
 		}		
 		borrowers[msg.sender].loanNumbers.push(loanNumber);//++;
-		borrowers[msg.sender].loans[loanNumber]=LoanType(paymentsPerYear, totalPayments, 0, annualRate, currDate, calculateDaysTillNextPayDate(currDate, paymentsPerYear), principal, true);
+		borrowers[msg.sender].loans[loanNumber]=LoanType(paymentsPerYear, totalPayments, 0, annualRate, currDate, currDate+calculateDaysTillNextPayDate(paymentsPerYear), principal, true);
 		loanNumber++;
 	}
 	function createFakeLoan(uint paymentsPerYear, uint totalPayments, uint annualRate,uint principal) public payable{
