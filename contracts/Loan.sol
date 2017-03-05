@@ -20,6 +20,7 @@ contract Loan {
 		uint originationDate;
 		uint payDate;
 		uint principal;
+		bool active;
 	}
 	struct Borrower {
 		bool exists;
@@ -88,7 +89,7 @@ contract Loan {
 		}
 		loanNumber++;
 		borrowers[msg.sender].loanNumbers.push(loanNumber);//++;
-		borrowers[msg.sender].loans[loanNumber]=LoanType(paymentsPerYear, totalPayments, 0, annualRate, currDate, calculateDaysTillNextPayDate(currDate, paymentsPerYear), principal);
+		borrowers[msg.sender].loans[loanNumber]=LoanType(paymentsPerYear, totalPayments, 0, annualRate, currDate, calculateDaysTillNextPayDate(currDate, paymentsPerYear), principal, true);
 	}
 	function createFakeLoan(uint paymentsPerYear, uint totalPayments, uint annualRate,uint principal) public payable{
 		createLoan(paymentsPerYear, totalPayments, annualRate, principal, 0);
@@ -124,14 +125,14 @@ contract Loan {
 	}
 	
 	function payLoan(uint loanNumber) public payable{
-		var loan=borrowers[msg.sender].loans[loanNumber];
 		var (paymentsMade, payAmount, payDate)=computeAmountNeededToPay(msg.sender, loanNumber);
-		loan.totalPaymentsMade=paymentsMade;
-		loan.payDate=payDate;
+		borrowers[msg.sender].loans[loanNumber].totalPaymentsMade=paymentsMade; 
+		borrowers[msg.sender].loans[loanNumber].payDate=payDate;
 		if(payAmount>0){
 			checkSendFunds(msg.sender.send(msg.value-payAmount));//pay back excess funds
 		}
-		if(hasFinishedLoan(paymentsMade, loan.totalPayments)){
+		if(hasFinishedLoan(paymentsMade, borrowers[msg.sender].loans[loanNumber].totalPayments)){
+			borrowers[msg.sender].loans[loanNumber].active=false;
 			borrowers[msg.sender].reputation++;
 		}
 	}	
