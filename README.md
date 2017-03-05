@@ -2,4 +2,4 @@ Simple contract for an amortizing loan.  Due to Solidity's lack of fixed point d
 
 Since solidity rounds down every payment had "1" added so that it amortizes faster than it should.  The last payment is a smaller payment to make the balance zero.  There is no accrual of interest for past due.  There is a reputation system to encourage on time payments.
 
-TODO: Reputation function doesn't seem to apply correctly.
+TODO: For some reason the "now" isn't working and is always saying that everyone is always past due.

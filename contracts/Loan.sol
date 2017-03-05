@@ -13,6 +13,7 @@ contract Loan {
 	function Loan(){
 		owner=msg.sender;
 	}
+	event borrowerPenalized(address borrower, uint currentReputation);
 	/**time being, only fixed rate*/
 	struct LoanType {
 		uint paymentsPerYear;
@@ -100,6 +101,7 @@ contract Loan {
 		uint numberOfMissedPayments=computeNumberMissedPayments(borrower, loanNumber);
 		if(numberOfMissedPayments>0){
 			borrowers[borrower].reputation=reputationHit(numberOfMissedPayments, borrowers[borrower].reputation);
+			borrowerPenalized(borrower, borrowers[borrower].reputation);
 		}
 	}
 	function createLoan(uint paymentsPerYear, uint totalPayments, uint annualRate,uint principal) public payable{
@@ -137,7 +139,6 @@ contract Loan {
 		var loan=borrowers[borrower].loans[loanNumber];
 		var payDate=loan.payDate;
 		var totalPaymentsMade=loan.totalPaymentsMade;
-		//uint annualRate, uint paymentsPerYear, uint totalPayments, uint principal
 		var am=pmt(loan.annualRate, loan.paymentsPerYear, loan.totalPayments, loan.principal);
 		uint payAmount=0;
 		while(checkTimeToPay(payDate)&&!hasFinishedLoan(totalPaymentsMade, loan.totalPayments)){
