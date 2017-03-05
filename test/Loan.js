@@ -1,11 +1,11 @@
 var Loan = artifacts.require("./Loan.sol");
 
-contract('Loan', (accounts)=>{
+contract('Ideal Loan', (accounts)=>{
   const payPerYear=12;
   const totalPay=24;//t
   const annualRate=40;//4%
   const principal=500;
-  it("should create loan", ()=>{
+  it("should create loan for account 0", ()=>{
     return Loan.deployed().then((instance)=> {
       return instance.createLoan.sendTransaction(payPerYear, totalPay, annualRate, principal, {value:3000000, gas:3000000}).then(()=> {
         return instance.getNumLoanForBorrower(accounts[0]).then((result)=>{
@@ -15,7 +15,7 @@ contract('Loan', (accounts)=>{
         
     });
   });
-  it("should have two loans", ()=>{
+  it("should create another loan for account 0", ()=>{
     return Loan.deployed().then((instance)=> {
       return instance.createLoan.sendTransaction(payPerYear, totalPay, annualRate, principal, {value:3000000, gas:3000000}).then(()=> {
         return instance.getNumLoanForBorrower(accounts[0]).then((result)=>{
@@ -25,14 +25,14 @@ contract('Loan', (accounts)=>{
         
     });
   });
-  it("should have 50 reputation", ()=>{
+  it("should give account 0 a default 50 reputation", ()=>{
     return Loan.deployed().then((instance)=> {
         return instance.getReputation(accounts[0]).then((result)=>{
           assert.equal(result.c[0], 50, "Repuation not equal to 50");
         })
     });
   });
-  it("should compute zero missed payments", ()=>{
+  it("should compute zero missed payments for new loan", ()=>{
     let loan;
     let loanNumber;
     const block=web3.eth.getBlock("latest");//(result)=>{
@@ -45,23 +45,23 @@ contract('Loan', (accounts)=>{
       loanNumber=loanNums.c[0];
       return loan.computeNumberMissedPayments(accounts[0], loanNumber);
     }).then((result)=>{
-      assert.equal(result.c[0], 0, "missedPayments not functioning")
+      assert.equal(result.c[0], 0, "missed payments not functioning")
     })
   });
 });
-contract('Loan', (accounts)=>{
+contract('Stateless testing', (accounts)=>{
   const payPerYear=12;
   const totalPay=24;//t
   const annualRate=40;//4%
   const principal=500;
-  it("periodic rate should equal 3", ()=>{
+  it("When annual rate is 40 (4%) and number of payments per year is 12, the periodic rate should equal 3 (rounding down 40/12)", ()=>{
     return Loan.deployed().then((instance)=> {
       return instance.getPeriodicRate(annualRate, payPerYear);
     }).then((result)=>{
       assert.equal(result.c[0], 3, "periodic rate does not equal 3");
     });
   });
-  it("pwPrecision should equal 1074", ()=>{
+  it("When annual rate is 40 (4%), the number of payments per year is 12, and the term is 2 years the (1+.04/12)^24 should be 1074 (1.074)", ()=>{
     let loan;
     return Loan.deployed().then((instance)=> {
       loan=instance;
@@ -72,14 +72,14 @@ contract('Loan', (accounts)=>{
       assert.equal(result.c[0], 1074, "pwPrecision does not equal 1074");
     });
   });
-  it("pmt should equal 22000", ()=>{
+  it("When annual rate is 40 (4%), the number of payments per year is 12, the term is 2 years, and the loan amount is 500, the payment should be 22000.  This includes a round up.", ()=>{
     return Loan.deployed().then((instance)=> {
       return instance.pmt(annualRate,payPerYear, totalPay, principal);
     }).then((result)=>{
       assert.equal(result.c[0], 22000, "pmt does not equal 22000");
     });
   });
-  it("balance should equal 479500", ()=>{
+  it("With the same loan features as above and after one payment, the balance should equal 479500 (479.50)", ()=>{
     let loan;
     return Loan.deployed().then((instance)=> {
       loan=instance;
@@ -90,7 +90,7 @@ contract('Loan', (accounts)=>{
       assert.equal(balance.c[0], 479500, "balance does not equal 479500");
     });
   });
-  it("balance should equal 500000", ()=>{
+  it("With the same loan features as above and after no payments, the balance should equal 500000 (500)", ()=>{
     let loan;
     return Loan.deployed().then((instance)=> {
       loan=instance;
@@ -101,7 +101,7 @@ contract('Loan', (accounts)=>{
       assert.equal(balance.c[0], 500000, "balance does not equal 500000");
     });
   });
-  it("balance should equal 254000", ()=>{
+  it("With the same loan features as above and after 12 payments, the balance should equal 254000 (254)", ()=>{
     let loan;
     return Loan.deployed().then((instance)=> {
       loan=instance;
@@ -112,7 +112,7 @@ contract('Loan', (accounts)=>{
       assert.equal(balance.c[0], 254000, "balance does not equal 254000");
     });
   });
-  it("balance should equal 14834", ()=>{
+  it("With the same loan features as above and after 23 payments, the balance should equal 14834 (14.834)", ()=>{
     let loan;
     return Loan.deployed().then((instance)=> {
       loan=instance;
@@ -123,14 +123,14 @@ contract('Loan', (accounts)=>{
       assert.equal(balance.c[0], 14834, "balance does not equal 14834");
     });
   });
-  it("should calculate days till next correctly", ()=>{
+  it("With the same loan features as above, the seconds between due dates is 2592000", ()=>{
     return Loan.deployed().then((instance)=> {
       return instance.calculateDaysTillNextPayDate(payPerYear);
     }).then((result)=>{
       assert.equal(result.c[0], 2592000, "nextDate does not equal 2592000");
     });
   });
-  it("should iterate dates correctly", ()=>{
+  it("should iterate dates so that after iteration the checkTimeToPay function returns false", ()=>{
     const block=web3.eth.getBlock("latest");//(result)=>{
     let loan;
     return Loan.deployed().then((instance)=> {
@@ -142,14 +142,14 @@ contract('Loan', (accounts)=>{
       assert.equal(isTimeToPay, false, "nextDate isn't working");
     })    
   });
-  it("should compute reputation hit for 12", ()=>{
+  it("should compute reputation hit for 12 missed payments", ()=>{
     return Loan.deployed().then((instance)=> {
       return instance.reputationHit(12, 50);
     }).then((result)=>{
       assert.equal(result.c[0], 15, "reputation not functioning")
     })
   });
-  it("should compute reputation hit for 24", ()=>{
+  it("should compute reputation hit for 24 missed payments", ()=>{
     return Loan.deployed().then((instance)=> {
       return instance.reputationHit(24, 50);
     }).then((result)=>{
@@ -157,12 +157,12 @@ contract('Loan', (accounts)=>{
     })
   });
 });
-contract('Loan', (accounts)=>{
+contract('Past due Loan', (accounts)=>{
   const payPerYear=12;
   const totalPay=24;//t
   const annualRate=40;//4%
   const principal=500;
-  it("should pay off loan", ()=>{
+  it("should pay off the last loan for account 0.  This can only be tested if past due.", ()=>{
     let loan;
     return Loan.deployed().then((instance)=> {
       loan=instance;
@@ -179,7 +179,7 @@ contract('Loan', (accounts)=>{
       assert.equal(amountsToPay[2].c[0], 64800000, "total time does not equal 64800000");
     });
   });
-  it("should compute number of missed payments", ()=>{
+  it("should compute number of missed payments for the last loan of account 0", ()=>{
     let loan;
     return Loan.deployed().then((instance)=> {
       loan=instance;
@@ -192,7 +192,7 @@ contract('Loan', (accounts)=>{
       assert.equal(result.c[0], totalPay, "missedPayments not functioning")
     })
   });
-  it("should penalize", ()=>{
+  it("should penalize account 0 for the missed payments", ()=>{
     const payPerYear=12;
     const totalPay=24;//two year loan
     const annualRate=40;//4%
