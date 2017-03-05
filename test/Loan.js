@@ -187,7 +187,6 @@ contract('Loan', (accounts)=>{
     }).then((numLoans)=>{
       return loan.getBorrowerLoanNumber(accounts[0], numLoans.c[0]-1);
     }).then((loanNums)=>{
-      console.log(loanNums);
       return loan.computeNumberMissedPayments(accounts[0], loanNums.c[0]);
     }).then((result)=>{
       assert.equal(result.c[0], totalPay, "missedPayments not functioning")
@@ -204,34 +203,25 @@ contract('Loan', (accounts)=>{
       return instance.numberOfBorrowers();
     }).then((numberOfBorrowers)=>{
       const numBorrowers=numberOfBorrowers.c[0];
-      console.log("Total number of borrowers: ", numBorrowers);
       return Promise.all(
         Array.apply(null, Array(numBorrowers)).map((val, index)=>{
-          console.log("Working on borrower number ", index);
           let borrower;
           return loan.getBorrowerAtIndex(index).then((brwr)=>{
             borrower=brwr;
-            console.log("Borrower found!  Address is ", borrower);
             return loan.getNumLoanForBorrower(borrower);
           }).then((nLoans)=>{
             const numLoans=nLoans.c[0];
-            console.log("The borrower has ", numLoans, " loans!");
             return Promise.all(
               Array.apply(null, Array(numLoans)).map((val, loanIndex)=>{
-                console.log("Working on loan index ", loanIndex);
                 let loanNumber;
                 return loan.getBorrowerLoanNumber(borrower, loanIndex).then((lNumber)=>{
                   loanNumber=lNumber.c[0];
-                  console.log("Working on loan number ", loanNumber);
                   return loan.penalizeBorrower.sendTransaction(borrower, loanNumber, {value:3000000, gas:3000000});
                 }).then((result)=>{
-                  console.log(result);
-                  console.log("Just ran a penalize check for ", borrower, " at loan number ", loanNumber);
                   return 0;
                 });
               })
             ).then(()=>{
-              console.log("Finished the check for all loans for borrower ", borrower);
               return loan.getReputation(borrower);
             }).then((reputation)=>{
               assert.equal(reputation.c[0], 5, "reputation not assigned correctly");
