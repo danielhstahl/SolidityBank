@@ -121,7 +121,7 @@ contract Loan {
 			borrowers[msg.sender].reputation=defaultRep;
 		}		
 		borrowers[msg.sender].loanNumbers.push(loanNumber);//++;
-		borrowers[msg.sender].loans[loanNumber]=LoanType(paymentsPerYear, totalPayments, 0, annualRate, currDate, currDate+calculateDaysTillNextPayDate(paymentsPerYear), principal, true);
+		borrowers[msg.sender].loans[loanNumber]=LoanType(paymentsPerYear, totalPayments, 0, annualRate, currDate, iterateNextPayDate(currDate, paymentsPerYear), principal, true);
 		loanNumber++;
 	}
 	function createFakeLoan(uint paymentsPerYear, uint totalPayments, uint annualRate,uint principal) public payable{
